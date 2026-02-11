@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d4b76a"/>
+      <stop offset="50%" stop-color="#c8a654"/>
+      <stop offset="100%" stop-color="#a8893e"/>
+    </linearGradient>
+    <linearGradient id="goldLight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e0c97a"/>
+      <stop offset="100%" stop-color="#c8a654"/>
+    </linearGradient>
+  </defs>
+  <!-- Hexagon outline -->
+  <polygon points="24,2 44,14 44,34 24,46 4,34 4,14" fill="none" stroke="url(#gold)" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Inner diamond -->
+  <polygon points="24,10 36,24 24,38 12,24" fill="none" stroke="url(#goldLight)" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Center hexagon -->
+  <polygon points="24,18 30,21 30,27 24,30 18,27 18,21" fill="url(#gold)" opacity="0.3"/>
+  <polygon points="24,18 30,21 30,27 24,30 18,27 18,21" fill="none" stroke="url(#gold)" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>

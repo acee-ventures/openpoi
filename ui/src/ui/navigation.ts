@@ -10,6 +10,15 @@ export const TAB_GROUPS = [
   { label: "Settings", tabs: ["config", "debug", "logs"] },
 ] as const;
 
+/** Tabs that are server-operator-only and hidden from end users. */
+const HIDDEN_TABS: ReadonlySet<string> = new Set(["instances", "debug", "logs", "nodes"]);
+
+/** Tab groups with server-only tabs filtered out for the user-facing sidebar. */
+export const VISIBLE_TAB_GROUPS = TAB_GROUPS.map((group) => ({
+  ...group,
+  tabs: group.tabs.filter((tab) => !HIDDEN_TABS.has(tab)),
+})).filter((group) => group.tabs.length > 0);
+
 export type Tab =
   | "agents"
   | "overview"
