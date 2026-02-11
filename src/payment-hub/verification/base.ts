@@ -9,7 +9,7 @@ import { cryptoDeposits } from "../schema.js";
 const BASE_RPC_URL = process.env.BASE_RPC_URL || "https://mainnet.base.org";
 const USDC_ADDRESS =
   process.env.VITE_USDC_ADDRESS_EVM || "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Default to Base Mainnet
-const POI_ADDRESS = process.env.POI_ADDRESS_EVM || "0x4Bb688D0c5C230303c0032Ff6A678e7A2b56eb3D";
+const POI_ADDRESS = process.env.POI_ADDRESS_EVM || "0xD3a3a3348B28A6C816644A642E36B2Cc2FFe8Fa8"; // Base Mainnet Proxy
 const TREASURY_ADDRESS_EVM = process.env.TREASURY_ADDRESS_EVM;
 
 // USDC/ERC20 ABI (minimal)

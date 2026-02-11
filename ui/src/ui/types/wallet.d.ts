@@ -1,4 +1,4 @@
-// Declare window.ethereum (EIP-1193)
+// Declare window.ethereum (EIP-1193) and window.tronWeb (TronLink)
 
 declare global {
   interface Window {

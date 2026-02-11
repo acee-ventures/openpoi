@@ -6,27 +6,24 @@ import { drizzle } from "drizzle-orm/neon-http";
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
+    console.error("DATABASE_URL not set");
     process.exit(1);
   }
 
   const client = neon(databaseUrl);
   const db = drizzle(client);
 
-  console.log("Inspecting users columns:");
-  const result = await db.execute(sql`
-    SELECT column_name, data_type 
-    FROM information_schema.columns 
-    WHERE table_name = 'users'
+  console.log("Checking crypto_deposits:");
+  const deposits = await db.execute(sql`
+    SELECT * FROM crypto_deposits ORDER BY created_at DESC LIMIT 5
   `);
-  console.log(JSON.stringify(result, null, 2));
+  console.log(JSON.stringify(deposits, null, 2));
 
-  console.log("\nInspecting user_balances columns:");
-  const result2 = await db.execute(sql`
-    SELECT column_name, data_type 
-    FROM information_schema.columns 
-    WHERE table_name = 'user_balances'
+  console.log("\nChecking user balances:");
+  const balances = await db.execute(sql`
+    SELECT * FROM user_balances LIMIT 5
   `);
-  console.log(JSON.stringify(result2, null, 2));
+  console.log(JSON.stringify(balances, null, 2));
 }
 
 main();

@@ -88,6 +88,10 @@ const BASE_METHODS = [
   "chat.history",
   "chat.abort",
   "chat.send",
+  "chat.inject",
+  // Payment Hub methods
+  "payment.balance",
+  "payment.verify",
 ];
 
 export function listGatewayMethods(): string[] {

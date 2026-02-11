@@ -2,6 +2,7 @@
  * Payment Hub — Database Connection
  *
  * Connects to the shared Neon PostgreSQL database used by ProofOfInfluence.
+ * Uses DATABASE_URL (shared with POI main app) as primary connection string.
  * Uses @neondatabase/serverless for HTTP-based queries (no persistent connections needed).
  */
 
@@ -16,11 +17,9 @@ export function getDb() {
     return _db;
   }
 
-  const databaseUrl = process.env.PAYMENT_HUB_DATABASE_URL || process.env.DATABASE_URL;
+  const databaseUrl = process.env.DATABASE_URL || process.env.PAYMENT_HUB_DATABASE_URL;
   if (!databaseUrl) {
-    throw new Error(
-      "[payment-hub] Missing PAYMENT_HUB_DATABASE_URL or DATABASE_URL environment variable",
-    );
+    throw new Error("[payment-hub] Missing DATABASE_URL environment variable");
   }
 
   const sql = neon(databaseUrl);
