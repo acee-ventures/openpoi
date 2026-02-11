@@ -1,3 +1,4 @@
+/// <reference path="../types/wallet.d.ts" />
 import { ethers } from "ethers";
 
 // Base Mainnet config
