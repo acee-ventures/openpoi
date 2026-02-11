@@ -319,16 +319,20 @@ function renderPricingInfo() {
       </div>
       <div class="status-list" style="font-size: 13px">
         <div>
-          <span>GPT-4o</span>
-          <span style="font-weight: 500; color: var(--text-strong)">3 credits / message</span>
-        </div>
-        <div>
-          <span>Claude Sonnet</span>
+          <span>GPT-5.3</span>
           <span style="font-weight: 500; color: var(--text-strong)">5 credits / message</span>
         </div>
         <div>
-          <span>DeepSeek R1</span>
-          <span style="font-weight: 500; color: var(--text-strong)">2 credits / message</span>
+          <span>Claude Opus 4.6</span>
+          <span style="font-weight: 500; color: var(--text-strong)">8 credits / message</span>
+        </div>
+        <div>
+          <span>Gemini 3 Pro</span>
+          <span style="font-weight: 500; color: var(--text-strong)">4 credits / message</span>
+        </div>
+        <div>
+          <span>Grok xAI 4.1</span>
+          <span style="font-weight: 500; color: var(--text-strong)">6 credits / message</span>
         </div>
         <div>
           <span>Image Generation</span>
