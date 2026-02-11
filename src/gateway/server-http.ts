@@ -18,6 +18,7 @@ import {
   handleA2uiHttpRequest,
 } from "../canvas-host/a2ui.js";
 import { loadConfig } from "../config/config.js";
+import { handlePaymentHubRequest } from "../payment-hub/gateway-billing.js";
 import { handleSlackHttpRequest } from "../slack/http/index.js";
 import { authorizeGatewayConnect, isLocalDirectRequest, type ResolvedGatewayAuth } from "./auth.js";
 import {
@@ -315,6 +316,11 @@ export function createGatewayHttpServer(opts: {
     }
 
     try {
+      // ─── Payment Hub: API key management + internal service routes ──
+      if (await handlePaymentHubRequest(req, res)) {
+        return;
+      }
+
       const configSnapshot = loadConfig();
       const trustedProxies = configSnapshot.gateway?.trustedProxies ?? [];
       if (await handleHooksRequest(req, res)) {

@@ -33,6 +33,11 @@ import {
   type InputImageLimits,
   type InputImageSource,
 } from "../media/input-files.js";
+import {
+  preRequestBillingHook,
+  postResponseBillingHook,
+  isPoiAuthenticatedRequest,
+} from "../payment-hub/gateway-billing.js";
 import { defaultRuntime } from "../runtime.js";
 import { authorizeGatewayConnect, type ResolvedGatewayAuth } from "./auth.js";
 import {
@@ -342,18 +347,6 @@ export async function handleOpenResponsesHttpRequest(
     return true;
   }
 
-  const token = getBearerToken(req);
-  const authResult = await authorizeGatewayConnect({
-    auth: opts.auth,
-    connectAuth: { token, password: token },
-    req,
-    trustedProxies: opts.trustedProxies,
-  });
-  if (!authResult.ok) {
-    sendUnauthorized(res);
-    return true;
-  }
-
   const limits = resolveResponsesLimits(opts.config);
   const maxBodyBytes =
     opts.maxBodyBytes ??
@@ -379,6 +372,27 @@ export async function handleOpenResponsesHttpRequest(
   const payload: CreateResponseBody = parseResult.data;
   const stream = Boolean(payload.stream);
   const model = payload.model;
+
+  // ─── Payment Hub: Pre-request billing hook ─────────────────────────────
+  const billing = await preRequestBillingHook(req, res, model);
+  if (!billing.proceed) {
+    return true; // Rejected by billing (402 or 401 already sent)
+  }
+
+  // ─── Auth: POI API key already authenticated, or fallback to gateway token ─
+  if (!billing.poiAuthenticated) {
+    const token = getBearerToken(req);
+    const authResult = await authorizeGatewayConnect({
+      auth: opts.auth,
+      connectAuth: { token, password: token },
+      req,
+      trustedProxies: opts.trustedProxies,
+    });
+    if (!authResult.ok) {
+      sendUnauthorized(res);
+      return true;
+    }
+  }
   const user = payload.user;
 
   // Extract images + files from input (Phase 2)
@@ -582,6 +596,9 @@ export async function handleOpenResponsesHttpRequest(
       });
 
       sendJson(res, 200, response);
+
+      // ─── Payment Hub: Post-response settlement (non-streaming) ──────
+      void postResponseBillingHook(req, usage.input_tokens, usage.output_tokens, responseId);
     } catch (err) {
       const response = createResponseResource({
         id: responseId,
@@ -662,6 +679,9 @@ export async function handleOpenResponsesHttpRequest(
     writeSseEvent(res, { type: "response.completed", response: finalResponse });
     writeDone(res);
     res.end();
+
+    // ─── Payment Hub: Post-response settlement (streaming) ──────────
+    void postResponseBillingHook(req, usage.input_tokens, usage.output_tokens, responseId);
   };
 
   const requestFinalize = (status: ResponseResource["status"], text: string) => {

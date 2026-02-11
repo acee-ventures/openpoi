@@ -4,6 +4,11 @@ import { buildHistoryContextFromEntries, type HistoryEntry } from "../auto-reply
 import { createDefaultDeps } from "../cli/deps.js";
 import { agentCommand } from "../commands/agent.js";
 import { emitAgentEvent, onAgentEvent } from "../infra/agent-events.js";
+import {
+  preRequestBillingHook,
+  postResponseBillingHook,
+  isPoiAuthenticatedRequest,
+} from "../payment-hub/gateway-billing.js";
 import { defaultRuntime } from "../runtime.js";
 import { authorizeGatewayConnect, type ResolvedGatewayAuth } from "./auth.js";
 import {
@@ -183,26 +188,35 @@ export async function handleOpenAiHttpRequest(
     return true;
   }
 
-  const token = getBearerToken(req);
-  const authResult = await authorizeGatewayConnect({
-    auth: opts.auth,
-    connectAuth: { token, password: token },
-    req,
-    trustedProxies: opts.trustedProxies,
-  });
-  if (!authResult.ok) {
-    sendUnauthorized(res);
+  // ─── Payment Hub: Pre-request billing hook ─────────────────────────────
+  // Peek at the model from a lightweight body pre-read or use default
+  const bodyRaw = await readJsonBodyOrError(req, res, opts.maxBodyBytes ?? 1024 * 1024);
+  if (bodyRaw === undefined) {
     return true;
   }
-
-  const body = await readJsonBodyOrError(req, res, opts.maxBodyBytes ?? 1024 * 1024);
-  if (body === undefined) {
-    return true;
-  }
-
-  const payload = coerceRequest(body);
+  const payload = coerceRequest(bodyRaw);
   const stream = Boolean(payload.stream);
   const model = typeof payload.model === "string" ? payload.model : "openclaw";
+
+  const billing = await preRequestBillingHook(req, res, model);
+  if (!billing.proceed) {
+    return true; // Rejected by billing (402 or 401 already sent)
+  }
+
+  // ─── Auth: POI API key already authenticated, or fallback to gateway token ─
+  if (!billing.poiAuthenticated) {
+    const token = getBearerToken(req);
+    const authResult = await authorizeGatewayConnect({
+      auth: opts.auth,
+      connectAuth: { token, password: token },
+      req,
+      trustedProxies: opts.trustedProxies,
+    });
+    if (!authResult.ok) {
+      sendUnauthorized(res);
+      return true;
+    }
+  }
   const user = typeof payload.user === "string" ? payload.user : undefined;
 
   const agentId = resolveAgentIdForRequest({ req, model });
@@ -246,6 +260,10 @@ export async function handleOpenAiHttpRequest(
               .join("\n\n")
           : "No response from OpenClaw.";
 
+      // Estimate token counts from content length (rough: ~4 chars per token)
+      const estimatedInputTokens = Math.ceil(prompt.message.length / 4);
+      const estimatedOutputTokens = Math.ceil(content.length / 4);
+
       sendJson(res, 200, {
         id: runId,
         object: "chat.completion",
@@ -258,8 +276,15 @@ export async function handleOpenAiHttpRequest(
             finish_reason: "stop",
           },
         ],
-        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        usage: {
+          prompt_tokens: estimatedInputTokens,
+          completion_tokens: estimatedOutputTokens,
+          total_tokens: estimatedInputTokens + estimatedOutputTokens,
+        },
       });
+
+      // ─── Payment Hub: Post-response settlement ──────────────────────
+      void postResponseBillingHook(req, estimatedInputTokens, estimatedOutputTokens, runId);
     } catch (err) {
       sendJson(res, 500, {
         error: { message: String(err), type: "api_error" },
@@ -273,6 +298,7 @@ export async function handleOpenAiHttpRequest(
   let wroteRole = false;
   let sawAssistantDelta = false;
   let closed = false;
+  let streamedContentLength = 0; // Track streamed content for billing
 
   const unsubscribe = onAgentEvent((evt) => {
     if (evt.runId !== runId) {
@@ -302,6 +328,7 @@ export async function handleOpenAiHttpRequest(
       }
 
       sawAssistantDelta = true;
+      streamedContentLength += content.length;
       writeSse(res, {
         id: runId,
         object: "chat.completion.chunk",
@@ -325,6 +352,11 @@ export async function handleOpenAiHttpRequest(
         unsubscribe();
         writeDone(res);
         res.end();
+
+        // ─── Payment Hub: Post-response settlement (streaming) ──────
+        const estIn = Math.ceil(prompt.message.length / 4);
+        const estOut = Math.ceil(streamedContentLength / 4);
+        void postResponseBillingHook(req, estIn, estOut, runId);
       }
     }
   });
