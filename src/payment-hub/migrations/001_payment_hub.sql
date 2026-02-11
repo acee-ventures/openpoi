@@ -32,7 +32,7 @@ CREATE INDEX IF NOT EXISTS idx_unified_ledger_created_at ON unified_ledger(creat
 -- ─── 2. api_keys ───────────────────────────────────────────────────────────
 -- Multi-tenant API keys for programmatic access
 
-CREATE TABLE IF NOT EXISTS api_keys (
+CREATE TABLE IF NOT EXISTS poi_api_keys (
   id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id VARCHAR NOT NULL,
   key_hash VARCHAR NOT NULL UNIQUE,   -- SHA-256 of full key
@@ -48,9 +48,9 @@ CREATE TABLE IF NOT EXISTS api_keys (
   expires_at TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys(key_hash);
-CREATE INDEX IF NOT EXISTS idx_api_keys_status ON api_keys(status);
+CREATE INDEX IF NOT EXISTS idx_poi_api_keys_user_id ON poi_api_keys(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_poi_api_keys_key_hash ON poi_api_keys(key_hash);
+CREATE INDEX IF NOT EXISTS idx_poi_api_keys_status ON poi_api_keys(status);
 
 -- ─── 3. crypto_deposits ────────────────────────────────────────────────────
 -- USDC/USDT/SOL multi-chain deposit records

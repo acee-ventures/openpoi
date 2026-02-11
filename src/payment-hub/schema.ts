@@ -100,20 +100,22 @@ export const unifiedLedger = pgTable(
   ],
 );
 
+// ─── API Keys ─────────────────────────────────────────────────────────────────
+// Multi-tenant access keys
 /**
- * api_keys — Multi-tenant API keys for programmatic access to OpenPOI gateway
+ * poi_api_keys — Multi-tenant API keys for programmatic access to OpenPOI gateway
  *
  * Key format: poi_sk_ + 32-byte hex (64 chars)
  * Storage: SHA-256 hash of full key
  */
 export const apiKeys = pgTable(
-  "api_keys",
+  "poi_api_keys",
   {
     id: varchar("id")
       .primaryKey()
       .default(sql`gen_random_uuid()`),
     userId: varchar("user_id").notNull(),
-    keyHash: varchar("key_hash").notNull().unique(), // SHA-256 of full key
+    keyHash: varchar("key_hash").notNull().unique(), // SHA-256 of the key
     keyPrefix: varchar("key_prefix", { length: 12 }).notNull(), // 'poi_sk_xxxx' for display
     name: varchar("name").notNull(),
     scopes: jsonb("scopes").default(sql`'["agent"]'::jsonb`),
