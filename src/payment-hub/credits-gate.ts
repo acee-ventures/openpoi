@@ -94,8 +94,11 @@ export async function checkCreditsGate(
 
   const balance = await getBalance(user.userId);
 
-  // Get tier discount (0 for free tier)
-  const discountRate = await getUserDiscountRate(0); // TODO: pass actual POI balance from chain
+  // Get tier discount based on user's POI holdings.
+  // TODO: Replace with on-chain POI token balance query (e.g. Solana SPL token balance)
+  // when the chain integration module is available. Using poiCredits as a proxy for now.
+  const poiBalance = balance.poiCredits;
+  const discountRate = await getUserDiscountRate(poiBalance);
 
   const estimatedCost = estimateCost(model, discountRate);
 

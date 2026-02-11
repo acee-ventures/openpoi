@@ -79,37 +79,38 @@ export async function deductCredits(
   }
 
   const db = getDb();
+  const metadataJson = opts.metadata ? JSON.stringify(opts.metadata) : null;
 
-  // Atomic balance check + deduction using raw SQL for row-level locking
+  // Atomic balance deduction + ledger insert using CTE.
+  // Single SQL statement ensures atomicity under Neon HTTP mode
+  // (each db.execute is a separate transaction boundary).
   const result = await db.execute(sql`
-    UPDATE user_balances
-    SET poi_credits = poi_credits - ${amount},
-        updated_at = NOW()
-    WHERE user_id = ${userId}
-      AND poi_credits >= ${amount}
-    RETURNING poi_credits
+    WITH deducted AS (
+      UPDATE user_balances
+      SET poi_credits = poi_credits - ${amount},
+          updated_at = NOW()
+      WHERE user_id = ${userId}
+        AND poi_credits >= ${amount}
+      RETURNING user_id, poi_credits
+    ),
+    logged AS (
+      INSERT INTO unified_ledger (user_id, type, amount_credits, scene, source, model, tokens_in, tokens_out, reference, metadata)
+      SELECT
+        user_id, 'debit', ${amount}, ${scene}, 'usage',
+        ${opts.model ?? null}, ${opts.tokensIn ?? null}, ${opts.tokensOut ?? null},
+        ${opts.reference ?? null},
+        CASE WHEN ${metadataJson}::text IS NOT NULL
+             THEN ${metadataJson}::jsonb
+             ELSE NULL
+        END
+      FROM deducted
+      RETURNING id
+    )
+    SELECT COUNT(*)::int AS cnt FROM logged
   `);
 
-  const rows = result as unknown as Array<{ poi_credits: number }>;
-  if (!rows || rows.length === 0) {
-    return false; // Insufficient balance or user not found
-  }
-
-  // Record in unified_ledger
-  await db.insert(unifiedLedger).values({
-    userId,
-    type: "debit",
-    amountCredits: amount,
-    scene,
-    source: "usage",
-    model: opts.model ?? null,
-    tokensIn: opts.tokensIn ?? null,
-    tokensOut: opts.tokensOut ?? null,
-    reference: opts.reference ?? null,
-    metadata: opts.metadata ?? null,
-  });
-
-  return true;
+  const rows = result as unknown as Array<{ cnt: number }>;
+  return (rows?.[0]?.cnt ?? 0) > 0;
 }
 
 /**
@@ -258,21 +259,26 @@ export async function migrateImmortalityToPoiCredits(): Promise<{
   `);
 
   // Record migration in unified_ledger
-  const ledgerEntries = usersWithCredits.map((u) => ({
-    userId: u.userId,
-    type: "credit" as const,
-    amountCredits: u.immortalityCredits,
-    scene: "migration",
-    source: "migration",
-    reference: "immortality_to_poi_credits",
-    metadata: { migratedFrom: "immortalityCredits", originalAmount: u.immortalityCredits },
-  }));
+  const ledgerEntries = usersWithCredits.map(
+    (u: { userId: string; immortalityCredits: number }) => ({
+      userId: u.userId,
+      type: "credit" as const,
+      amountCredits: u.immortalityCredits,
+      scene: "migration",
+      source: "migration",
+      reference: "immortality_to_poi_credits",
+      metadata: { migratedFrom: "immortalityCredits", originalAmount: u.immortalityCredits },
+    }),
+  );
 
   if (ledgerEntries.length > 0) {
     await db.insert(unifiedLedger).values(ledgerEntries);
   }
 
-  const totalCreditsMigrated = usersWithCredits.reduce((sum, u) => sum + u.immortalityCredits, 0);
+  const totalCreditsMigrated = usersWithCredits.reduce(
+    (sum: number, u: { immortalityCredits: number }) => sum + u.immortalityCredits,
+    0,
+  );
 
   return {
     usersAffected: usersWithCredits.length,

@@ -23,6 +23,33 @@ type OpenAiHttpOptions = {
   trustedProxies?: string[];
 };
 
+/**
+ * Extract actual token usage from agentCommand result metadata.
+ * Mirrors the pattern in openresponses-http.ts for consistent metering.
+ */
+function extractUsageFromResult(result: unknown): {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+} {
+  const meta = (result as { meta?: { agentMeta?: { usage?: Record<string, number> } } } | null)
+    ?.meta;
+  const usage = meta && typeof meta === "object" ? meta.agentMeta?.usage : undefined;
+  if (!usage) {
+    return { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+  }
+  const input = usage.input ?? 0;
+  const output = usage.output ?? 0;
+  const cacheRead = usage.cacheRead ?? 0;
+  const cacheWrite = usage.cacheWrite ?? 0;
+  const total = usage.total ?? input + output + cacheRead + cacheWrite;
+  return {
+    prompt_tokens: Math.max(0, input),
+    completion_tokens: Math.max(0, output),
+    total_tokens: Math.max(0, total),
+  };
+}
+
 type OpenAiChatMessage = {
   role?: unknown;
   content?: unknown;
@@ -256,9 +283,8 @@ export async function handleOpenAiHttpRequest(
               .join("\n\n")
           : "No response from OpenClaw.";
 
-      // Estimate token counts from content length (rough: ~4 chars per token)
-      const estimatedInputTokens = Math.ceil(prompt.message.length / 4);
-      const estimatedOutputTokens = Math.ceil(content.length / 4);
+      // Extract actual token usage from agent result metadata
+      const usage = extractUsageFromResult(result);
 
       sendJson(res, 200, {
         id: runId,
@@ -273,14 +299,14 @@ export async function handleOpenAiHttpRequest(
           },
         ],
         usage: {
-          prompt_tokens: estimatedInputTokens,
-          completion_tokens: estimatedOutputTokens,
-          total_tokens: estimatedInputTokens + estimatedOutputTokens,
+          prompt_tokens: usage.prompt_tokens,
+          completion_tokens: usage.completion_tokens,
+          total_tokens: usage.total_tokens,
         },
       });
 
       // ─── Payment Hub: Post-response settlement ──────────────────────
-      void postResponseBillingHook(req, estimatedInputTokens, estimatedOutputTokens, runId);
+      void postResponseBillingHook(req, usage.prompt_tokens, usage.completion_tokens, runId);
     } catch (err) {
       sendJson(res, 500, {
         error: { message: String(err), type: "api_error" },
@@ -294,7 +320,6 @@ export async function handleOpenAiHttpRequest(
   let wroteRole = false;
   let sawAssistantDelta = false;
   let closed = false;
-  let streamedContentLength = 0; // Track streamed content for billing
 
   const unsubscribe = onAgentEvent((evt) => {
     if (evt.runId !== runId) {
@@ -324,7 +349,7 @@ export async function handleOpenAiHttpRequest(
       }
 
       sawAssistantDelta = true;
-      streamedContentLength += content.length;
+
       writeSse(res, {
         id: runId,
         object: "chat.completion.chunk",
@@ -348,11 +373,6 @@ export async function handleOpenAiHttpRequest(
         unsubscribe();
         writeDone(res);
         res.end();
-
-        // ─── Payment Hub: Post-response settlement (streaming) ──────
-        const estIn = Math.ceil(prompt.message.length / 4);
-        const estOut = Math.ceil(streamedContentLength / 4);
-        void postResponseBillingHook(req, estIn, estOut, runId);
       }
     }
   });
@@ -376,6 +396,15 @@ export async function handleOpenAiHttpRequest(
         },
         defaultRuntime,
         deps,
+      );
+
+      // ─── Payment Hub: Post-response settlement (streaming) ──────────
+      const streamUsage = extractUsageFromResult(result);
+      void postResponseBillingHook(
+        req,
+        streamUsage.prompt_tokens,
+        streamUsage.completion_tokens,
+        runId,
       );
 
       if (closed) {
