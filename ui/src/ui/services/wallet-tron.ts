@@ -17,7 +17,7 @@ export class TronWalletService extends EventTarget {
       this.address = window.tronWeb.defaultAddress.base58;
       this.isConnected = true;
       this.dispatchEvent(new CustomEvent("connected", { detail: this.address }));
-      return this.address;
+      return this.address!;
     } else {
       // Request access
       const res = await window.tronWeb.request({ method: "tron_requestAccounts" });
@@ -30,7 +30,7 @@ export class TronWalletService extends EventTarget {
           this.address = window.tronWeb.defaultAddress.base58;
           this.isConnected = true;
           this.dispatchEvent(new CustomEvent("connected", { detail: this.address }));
-          return this.address;
+          return this.address!;
         }
       }
 
