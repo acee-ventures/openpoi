@@ -1,0 +1,17 @@
+
+> openclaw@2026.2.9 gateway:dev
+> OPENCLAW_SKIP_CHANNELS=1 CLAWDBOT_SKIP_CHANNELS=1 node scripts/run-node.mjs --dev gateway
+
+[90m2026-02-11T03:42:46.648Z[39m [35m[canvas][39m [36mhost mounted at http://127.0.0.1:19001/__openclaw__/canvas/ (root /home/chase/.openclaw/canvas)[39m
+[90m2026-02-11T03:42:46.665Z[39m [36m[heartbeat][39m [36mstarted[39m
+[90m2026-02-11T03:42:46.670Z[39m [36m[gateway][39m [36magent model: anthropic/claude-opus-4-6[39m
+[90m2026-02-11T03:42:46.671Z[39m [36m[gateway][39m [36mlistening on ws://127.0.0.1:19001 (PID 547428)[39m
+[90m2026-02-11T03:42:46.671Z[39m [36m[gateway][39m [36mlistening on ws://[::1]:19001[39m
+[90m2026-02-11T03:42:46.672Z[39m [36m[gateway][39m [36mlog file: /tmp/openclaw/openclaw-2026-02-10.log[39m
+[90m2026-02-11T03:42:46.674Z[39m [35m[browser/service][39m [36mBrowser control service ready (profiles=2)[39m
+[90m2026-02-11T03:42:46.675Z[39m [31m[gateway/channels][39m [36mskipping channel start (OPENCLAW_SKIP_CHANNELS=1 or OPENCLAW_SKIP_PROVIDERS=1)[39m
+[90m2026-02-11T03:43:55.130Z[39m [36m[gateway][39m [36msignal SIGINT received[39m
+[90m2026-02-11T03:43:55.132Z[39m [36m[gateway][39m [36mreceived SIGINT; shutting down[39m
+[90m2026-02-11T03:43:55.133Z[39m [36m[gateway][39m [36msignal SIGINT received[39m
+[90m2026-02-11T03:43:55.133Z[39m [36m[gateway][39m [36mreceived SIGINT during shutdown; ignoring[39m
+[90m2026-02-11T03:44:00.137Z[39m [36m[gateway][39m [31mshutdown timed out; exiting without full cleanup[39m

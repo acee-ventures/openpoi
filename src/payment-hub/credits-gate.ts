@@ -16,6 +16,9 @@ import type { PoiAuthenticatedUser } from "./poi-auth.js";
 import { getBalance, recordUsageAndDeduct, getUserDiscountRate } from "./credits-engine.js";
 import { calculateCreditCost, DEFAULT_MODEL_PRICING } from "./pricing.js";
 
+// Make sure to match env var logic or config
+export const isInitialized = () => process.env.PAYMENT_HUB_ENABLED === "true";
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface CreditsGateResult {
@@ -121,6 +124,18 @@ export async function checkCreditsGate(
     estimatedCost,
     discountRate,
   };
+}
+
+/**
+ * Simplified check for non-middleware contexts (e.g. WebSocket).
+ * Just checks if balance > 0.
+ */
+export async function checkCreditsGateSimple(userId: string): Promise<boolean> {
+  if (!userId) {
+    return false;
+  }
+  const balance = await getBalance(userId);
+  return balance.poiCredits >= 1; // Minimum to start a chat
 }
 
 /**

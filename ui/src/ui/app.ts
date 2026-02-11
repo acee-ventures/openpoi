@@ -78,6 +78,8 @@ import {
 } from "./app-tool-stream.ts";
 import { resolveInjectedAssistantIdentity } from "./assistant-identity.ts";
 import { loadAssistantIdentity as loadAssistantIdentityInternal } from "./controllers/assistant-identity.ts";
+import { type BillingState, loadBalance, verifyTransaction } from "./controllers/billing.ts";
+import { walletService } from "./services/wallet.ts";
 import { loadSettings, type UiSettings } from "./storage.ts";
 import { type ChatAttachment, type ChatQueueItem, type CronFormState } from "./ui-types.ts";
 
@@ -182,6 +184,19 @@ export class OpenClawApp extends LitElement {
   @state() configSearchQuery = "";
   @state() configActiveSection: string | null = null;
   @state() configActiveSubsection: string | null = null;
+  @state() billingState: BillingState = {
+    client: null,
+    connected: false,
+    balance: null,
+    balanceLoading: false,
+    balanceError: null,
+    paymentProcessing: false,
+    paymentError: null,
+    paymentSuccess: false,
+    selectedChain: "base",
+    selectedToken: "USDC",
+    walletAddress: null,
+  };
 
   @state() channelsLoading = false;
   @state() channelsSnapshot: ChannelsStatusSnapshot | null = null;
@@ -351,6 +366,17 @@ export class OpenClawApp extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     handleConnected(this as unknown as Parameters<typeof handleConnected>[0]);
+
+    // Listen for wallet connections
+    walletService.addEventListener("connected", ((e: CustomEvent) => {
+      const { chain, address } = e.detail;
+      console.log("Wallet connected:", chain, address);
+      this.handleBillingConfigChange({
+        connected: true, // Wallet connected
+        walletAddress: address,
+        selectedChain: chain,
+      });
+    }) as EventListener);
   }
 
   protected firstUpdated() {
@@ -364,6 +390,13 @@ export class OpenClawApp extends LitElement {
 
   protected updated(changed: Map<PropertyKey, unknown>) {
     handleUpdated(this as unknown as Parameters<typeof handleUpdated>[0], changed);
+    if (changed.has("connected") || changed.has("client")) {
+      this.billingState = {
+        ...this.billingState,
+        connected: this.connected,
+        client: this.client,
+      };
+    }
   }
 
   connect() {
@@ -530,6 +563,25 @@ export class OpenClawApp extends LitElement {
 
   handleGatewayUrlCancel() {
     this.pendingGatewayUrl = null;
+  }
+
+  async handleBillingLoad() {
+    await loadBalance(this.billingState);
+    this.requestUpdate("billingState");
+  }
+
+  async handleBillingVerify(chain: "base" | "tron", txHash: string) {
+    const success = await verifyTransaction(this.billingState, chain, txHash);
+    this.requestUpdate("billingState");
+    return success;
+  }
+
+  handleBillingConfigChange(patch: Record<string, unknown>) {
+    this.billingState = {
+      ...this.billingState,
+      ...patch,
+    };
+    this.requestUpdate("billingState");
   }
 
   // Sidebar handlers for tool output viewing

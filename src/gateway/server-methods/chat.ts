@@ -9,6 +9,7 @@ import { resolveAgentTimeoutMs } from "../../agents/timeout.js";
 import { dispatchInboundMessage } from "../../auto-reply/dispatch.js";
 import { createReplyDispatcher } from "../../auto-reply/reply/reply-dispatcher.js";
 import { createReplyPrefixOptions } from "../../channels/reply-prefix.js";
+import { checkCreditsGateSimple, isInitialized } from "../../payment-hub/credits-gate.js";
 import { resolveSendPolicy } from "../../sessions/send-policy.js";
 import { INTERNAL_MESSAGE_CHANNEL } from "../../utils/message-channel.js";
 import {
@@ -407,6 +408,37 @@ export const chatHandlers: GatewayRequestHandlers = {
         errorShape(ErrorCodes.INVALID_REQUEST, "send blocked by session policy"),
       );
       return;
+    }
+
+    // Payment Hub: Check Credits via WebSocket
+    if (isInitialized()) {
+      try {
+        // Resolve User ID (Priority: Authenticated User > Session Key)
+        const userId = client?.connect?.client?.id ?? `session:${sessionKey}`;
+
+        // Check if user has sufficient credits
+        const hasCredits = await checkCreditsGateSimple(userId);
+        if (!hasCredits) {
+          respond(
+            false,
+            undefined,
+            errorShape(
+              ErrorCodes.INVALID_REQUEST,
+              "PAYMENT_REQUIRED: Insufficient credits. Please top up your balance. (Required: >1 credit)",
+            ),
+          );
+          return;
+        }
+      } catch (err) {
+        // Fail open or closed? Safe default is closed, but logging warning.
+        context.logGateway.warn(`Payment Hub Check Failed: ${err}`);
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.UNAVAILABLE, "Payment service unavailable"),
+        );
+        return;
+      }
     }
 
     if (stopCommand) {

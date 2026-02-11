@@ -1,5 +1,6 @@
 import type { EventLogEntry } from "./app-events.ts";
 import type { CompactionStatus } from "./app-tool-stream.ts";
+import type { BillingState } from "./controllers/billing.ts";
 import type { DevicePairingList } from "./controllers/devices.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
@@ -182,6 +183,7 @@ export type AppViewState = {
   usageLogFilterTools: string[];
   usageLogFilterHasTools: boolean;
   usageLogFilterQuery: string;
+  billingState: BillingState;
   cronLoading: boolean;
   cronJobs: CronJob[];
   cronStatus: CronStatus | null;
@@ -259,6 +261,9 @@ export type AppViewState = {
   handleCronAdd: () => Promise<void>;
   handleCronRunsLoad: (jobId: string) => Promise<void>;
   handleCronFormUpdate: (path: string, value: unknown) => void;
+  handleBillingLoad: () => Promise<void>;
+  handleBillingVerify: (chain: "base" | "tron", txHash: string) => Promise<boolean>;
+  handleBillingConfigChange: (patch: Record<string, unknown>) => void;
   handleSessionsLoad: () => Promise<void>;
   handleSessionsPatch: (key: string, patch: unknown) => Promise<void>;
   handleLoadNodes: () => Promise<void>;

@@ -67,7 +67,10 @@ const debouncedLoadUsage = (state: UsageState) => {
   }
   usageDateDebounceTimeout = window.setTimeout(() => void loadUsage(state), 400);
 };
+import { renderWalletConnect } from "./components/wallet-connect.ts";
+import { walletService } from "./services/wallet.ts";
 import { renderAgents } from "./views/agents.ts";
+import { renderBilling } from "./views/billing.ts";
 import { renderChannels } from "./views/channels.ts";
 import { renderChat } from "./views/chat.ts";
 import { renderConfig } from "./views/config.ts";
@@ -147,7 +150,9 @@ export function renderApp(state: AppViewState) {
             </div>
           </div>
         </div>
+
         <div class="topbar-status">
+
           <div class="pill">
             <span class="statusDot ${state.connected ? "ok" : ""}"></span>
             <span>Health</span>
@@ -198,6 +203,18 @@ export function renderApp(state: AppViewState) {
               <span class="nav-item__icon" aria-hidden="true">${icons.book}</span>
               <span class="nav-item__text">ACEE Website</span>
             </a>
+          </div>
+        </div>
+
+        <div class="nav-group nav-group--wallet" style="margin-top: auto; border-top: 1px solid var(--c-border); padding-top: 8px;">
+          <div class="nav-group__items" style="padding: 0 8px;">
+            ${renderWalletConnect(
+              state.billingState.walletAddress,
+              () => walletService.connect(state.billingState.selectedChain),
+              () => {
+                /* Disconnect */
+              },
+            )}
           </div>
         </div>
       </aside>
@@ -319,6 +336,14 @@ export function renderApp(state: AppViewState) {
               })
             : nothing
         }
+
+        ${
+          state.tab === "billing"
+            ? renderBilling(state.billingState, (patch) => state.handleBillingConfigChange(patch))
+            : nothing
+        }
+
+
 
         ${
           state.tab === "usage"

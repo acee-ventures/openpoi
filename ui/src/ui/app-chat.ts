@@ -194,10 +194,10 @@ export async function handleSendChat(
 
   await sendChatMessageNow(host, message, {
     previousDraft: messageOverride == null ? previousDraft : undefined,
-    restoreDraft: Boolean(messageOverride && opts?.restoreDraft),
+    restoreDraft: Boolean(messageOverride == null && opts?.restoreDraft),
     attachments: hasAttachments ? attachmentsToSend : undefined,
     previousAttachments: messageOverride == null ? attachments : undefined,
-    restoreAttachments: Boolean(messageOverride && opts?.restoreDraft),
+    restoreAttachments: Boolean(messageOverride == null && opts?.restoreDraft),
     refreshSessions,
   });
 }

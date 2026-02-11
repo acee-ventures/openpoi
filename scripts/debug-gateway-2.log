@@ -1,0 +1,31 @@
+
+> openclaw@2026.2.9 gateway:dev
+> OPENCLAW_SKIP_CHANNELS=1 CLAWDBOT_SKIP_CHANNELS=1 node scripts/run-node.mjs --dev gateway
+
+│
+◇  Doctor changes ─────────────────────╮
+│                                      │
+│  Slack configured, not enabled yet.  │
+│                                      │
+├──────────────────────────────────────╯
+│
+◇  Doctor ────────────────────────────────────────────────────────────╮
+│                                                                     │
+│  Run "openclaw --profile dev doctor --fix" to apply these changes.  │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────╯
+[90m2026-02-11T03:27:20.981Z[39m [36m[gateway][39m [36mauto-enabled plugins:[39m
+[36m- Slack configured, not enabled yet.[39m
+[90m2026-02-11T03:27:20.987Z[39m [35m[canvas][39m [36mhost mounted at http://127.0.0.1:19001/__openclaw__/canvas/ (root /home/chase/.openclaw/canvas)[39m
+[90m2026-02-11T03:27:21.009Z[39m [36m[heartbeat][39m [36mstarted[39m
+[90m2026-02-11T03:27:21.011Z[39m [36m[gateway][39m [36magent model: anthropic/claude-opus-4-6[39m
+[90m2026-02-11T03:27:21.012Z[39m [36m[gateway][39m [36mlistening on ws://127.0.0.1:19001 (PID 543621)[39m
+[90m2026-02-11T03:27:21.012Z[39m [36m[gateway][39m [36mlistening on ws://[::1]:19001[39m
+[90m2026-02-11T03:27:21.012Z[39m [36m[gateway][39m [36mlog file: /tmp/openclaw/openclaw-2026-02-10.log[39m
+[90m2026-02-11T03:27:21.015Z[39m [35m[browser/service][39m [36mBrowser control service ready (profiles=2)[39m
+[90m2026-02-11T03:27:21.015Z[39m [31m[gateway/channels][39m [36mskipping channel start (OPENCLAW_SKIP_CHANNELS=1 or OPENCLAW_SKIP_PROVIDERS=1)[39m
+[90m2026-02-11T03:29:31.583Z[39m [36m[gateway][39m [36msignal SIGINT received[39m
+[90m2026-02-11T03:29:31.584Z[39m [36m[gateway][39m [36mreceived SIGINT; shutting down[39m
+[90m2026-02-11T03:29:31.585Z[39m [36m[gateway][39m [36msignal SIGINT received[39m
+[90m2026-02-11T03:29:31.585Z[39m [36m[gateway][39m [36mreceived SIGINT during shutdown; ignoring[39m
+[90m2026-02-11T03:29:31.586Z[39m [34m[gmail-watcher][39m [36mgmail watcher stopped[39m

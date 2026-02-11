@@ -50,6 +50,20 @@ export const DEFAULT_MODEL_PRICING: Record<string, ModelPrice> = {
 export const CREDITS_PER_USD = 100;
 
 /**
+ * Crypto exchange rates for stablecoins and utility tokens.
+ * Used by payment verification logic to convert on-chain amounts to Credits.
+ *
+ * Rates:
+ * - USDC/USDT: Pegged to USD (1:1 with CREDITS_PER_USD → 100 Credits)
+ * - POI: Fixed utility rate (1 POI = 1,000 Credits)
+ */
+export const CRYPTO_EXCHANGE_RATES = {
+  USDC: CREDITS_PER_USD,
+  USDT: CREDITS_PER_USD,
+  POI: 1000,
+};
+
+/**
  * POI tier discount rates (matches poiTiers DB table).
  * Used as fallback when DB is unreachable.
  */
