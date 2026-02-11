@@ -4,11 +4,7 @@ import { buildHistoryContextFromEntries, type HistoryEntry } from "../auto-reply
 import { createDefaultDeps } from "../cli/deps.js";
 import { agentCommand } from "../commands/agent.js";
 import { emitAgentEvent, onAgentEvent } from "../infra/agent-events.js";
-import {
-  preRequestBillingHook,
-  postResponseBillingHook,
-  isPoiAuthenticatedRequest,
-} from "../payment-hub/gateway-billing.js";
+import { preRequestBillingHook, postResponseBillingHook } from "../payment-hub/gateway-billing.js";
 import { defaultRuntime } from "../runtime.js";
 import { authorizeGatewayConnect, type ResolvedGatewayAuth } from "./auth.js";
 import {

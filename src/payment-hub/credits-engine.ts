@@ -9,7 +9,7 @@
  */
 
 import { eq, sql } from "drizzle-orm";
-import { getDb, type PaymentHubDb } from "./db.js";
+import { getDb } from "./db.js";
 import { calculateCreditCost, type ModelPrice } from "./pricing.js";
 import { userBalances, unifiedLedger, immortalityLedger, poiTiers } from "./schema.js";
 

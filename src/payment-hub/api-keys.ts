@@ -10,7 +10,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { randomBytes, createHash } from "node:crypto";
 import { getDb } from "./db.js";
 import { authenticateRequest, toAuthenticatedUser } from "./poi-auth.js";
-import { apiKeys, users } from "./schema.js";
+import { apiKeys } from "./schema.js";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 

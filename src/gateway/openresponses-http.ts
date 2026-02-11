@@ -33,11 +33,7 @@ import {
   type InputImageLimits,
   type InputImageSource,
 } from "../media/input-files.js";
-import {
-  preRequestBillingHook,
-  postResponseBillingHook,
-  isPoiAuthenticatedRequest,
-} from "../payment-hub/gateway-billing.js";
+import { preRequestBillingHook, postResponseBillingHook } from "../payment-hub/gateway-billing.js";
 import { defaultRuntime } from "../runtime.js";
 import { authorizeGatewayConnect, type ResolvedGatewayAuth } from "./auth.js";
 import {
