@@ -185,6 +185,60 @@ function renderAttachmentPreview(props: ChatProps) {
   `;
 }
 
+function isInsufficientCreditsError(error: string): boolean {
+  const lower = error.toLowerCase();
+  return (
+    lower.includes("402") ||
+    lower.includes("insufficient credit") ||
+    lower.includes("insufficient balance") ||
+    lower.includes("not enough credit") ||
+    lower.includes("payment required")
+  );
+}
+
+function renderChatError(error: string) {
+  if (isInsufficientCreditsError(error)) {
+    return html`
+      <div class="callout danger insufficient-credits-callout">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            style="flex-shrink: 0"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>Insufficient credits — </span>
+          <a
+            href="/billing"
+            class="btn btn--sm"
+            style="
+              background: var(--accent);
+              color: var(--bg);
+              font-weight: 600;
+              padding: 4px 12px;
+              border-radius: 6px;
+              text-decoration: none;
+              font-size: 12px;
+            "
+            >Add Funds</a
+          >
+        </div>
+      </div>
+    `;
+  }
+  return html`<div class="callout danger">${error}</div>`;
+}
+
 export function renderChat(props: ChatProps) {
   const canCompose = props.connected;
   const isBusy = props.sending || props.stream !== null;
@@ -266,7 +320,7 @@ export function renderChat(props: ChatProps) {
     <section class="card chat">
       ${props.disabledReason ? html`<div class="callout">${props.disabledReason}</div>` : nothing}
 
-      ${props.error ? html`<div class="callout danger">${props.error}</div>` : nothing}
+      ${props.error ? renderChatError(props.error) : nothing}
 
       ${
         props.focusMode
