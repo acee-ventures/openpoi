@@ -21,8 +21,8 @@
     "mode": "local",
     "bind": "lan",
     "auth": {
-      "token": "${OPENCLAW_GATEWAY_TOKEN}",
-      "password": "${OPENCLAW_GATEWAY_PASSWORD}"
+      "mode": "token",
+      "token": "${OPENCLAW_GATEWAY_TOKEN}"
     },
     "controlUi": {
       "allowInsecureAuth": true,
