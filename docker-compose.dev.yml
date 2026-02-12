@@ -1,0 +1,25 @@
+# ─── OpenPOI Local Development ─────────────────────────────
+# Usage:
+#   cp .env.example .env   # fill in your values
+#   docker compose -f docker-compose.dev.yml up --build
+#
+# Access: http://localhost:10000
+
+services:
+  gateway:
+    build: .
+    ports:
+      - "10000:10000"
+    env_file: .env
+    environment:
+      - PORT=10000
+      - NODE_OPTIONS=--max-old-space-size=1536
+      - PAYMENT_HUB_ENABLED=true
+      - OPENCLAW_STATE_DIR=/data/.openclaw
+      - OPENCLAW_WORKSPACE_DIR=/data/workspace
+    volumes:
+      - openpoi-data:/data
+
+volumes:
+  openpoi-data:
+    driver: local
