@@ -7,16 +7,22 @@
       },
       "workspace": "/data/workspace"
     },
-    "list": [{
-      "id": "main",
-      "identity": {
-        "name": "ACEE Agent",
-        "emoji": "🦅"
+    "list": [
+      {
+        "id": "main",
+        "identity": {
+          "name": "ACEE Agent",
+          "emoji": "🦅"
+        }
       }
-    }]
+    ]
   },
   "gateway": {
     "mode": "local",
-    "bind": "lan"
+    "bind": "lan",
+    "auth": {
+      "token": "${OPENCLAW_GATEWAY_TOKEN}",
+      "password": "${OPENCLAW_GATEWAY_PASSWORD}"
+    }
   }
 }
