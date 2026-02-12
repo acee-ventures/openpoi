@@ -43,6 +43,10 @@ USER node
 ENV PORT=10000
 EXPOSE $PORT
 
+# Bundle deploy config for headless environments (sets Gemini as default LLM)
+COPY deploy/openpoi.json /app/deploy/openpoi.json
+ENV OPENCLAW_CONFIG_PATH=/app/deploy/openpoi.json
+
 # Start gateway server.
 # --bind lan: listen on 0.0.0.0 so the container platform can route traffic.
 # --allow-unconfigured: skip onboarding wizard in headless environments.
