@@ -27,6 +27,12 @@
     "controlUi": {
       "allowInsecureAuth": true,
       "dangerouslyDisableDeviceAuth": true
+    },
+    "http": {
+      "endpoints": {
+        "responses": { "enabled": true },
+        "chatCompletions": { "enabled": true }
+      }
     }
   }
 }
