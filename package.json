@@ -138,6 +138,7 @@
     "ethers": "^6.16.0",
     "express": "^5.2.1",
     "file-type": "^21.3.0",
+    "google-auth-library": "^10.5.0",
     "grammy": "^1.39.3",
     "hono": "4.11.9",
     "jiti": "^2.6.1",
