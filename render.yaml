@@ -47,6 +47,10 @@ services:
       - key: OPENCLAW_GATEWAY_PASSWORD
         sync: false
 
+      # ─── Identity (Google OAuth) ──────────────────────────
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+
     disk:
       name: openclaw-data
       mountPath: /data

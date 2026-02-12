@@ -5,6 +5,7 @@ import type { DevicePairingList } from "./controllers/devices.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
 import type { SkillMessage } from "./controllers/skills.ts";
+import type { UserIdentityState } from "./controllers/user-identity.ts";
 import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
 import type { Tab } from "./navigation.ts";
 import type { UiSettings } from "./storage.ts";
@@ -46,6 +47,7 @@ export type AppViewState = {
   theme: ThemeMode;
   themeResolved: "light" | "dark";
   hello: GatewayHelloOk | null;
+  googleClientId: string | null;
   lastError: string | null;
   eventLog: EventLogEntry[];
   assistantName: string;
@@ -184,6 +186,7 @@ export type AppViewState = {
   usageLogFilterHasTools: boolean;
   usageLogFilterQuery: string;
   billingState: BillingState;
+  userIdentity: UserIdentityState;
   cronLoading: boolean;
   cronJobs: CronJob[];
   cronStatus: CronStatus | null;
@@ -264,6 +267,8 @@ export type AppViewState = {
   handleBillingLoad: () => Promise<void>;
   handleBillingVerify: (chain: "base" | "tron", txHash: string) => Promise<boolean>;
   handleBillingConfigChange: (patch: Record<string, unknown>) => void;
+  handleUserIdentityBind: (credential: string) => Promise<void>;
+  handleUserIdentityRecover: (credential: string) => Promise<void>;
   handleSessionsLoad: () => Promise<void>;
   handleSessionsPatch: (key: string, patch: unknown) => Promise<void>;
   handleLoadNodes: () => Promise<void>;

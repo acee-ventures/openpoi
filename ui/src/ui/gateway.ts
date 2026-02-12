@@ -30,6 +30,7 @@ export type GatewayHelloOk = {
   protocol: number;
   features?: { methods?: string[]; events?: string[] };
   snapshot?: unknown;
+  googleClientId?: string;
   auth?: {
     deviceToken?: string;
     role?: string;

@@ -872,6 +872,7 @@ export function attachGatewayWsMessageHandler(params: {
           features: { methods: gatewayMethods, events },
           snapshot,
           canvasHostUrl,
+          googleClientId: process.env.GOOGLE_CLIENT_ID,
           auth: deviceToken
             ? {
                 deviceToken: deviceToken.token,

@@ -216,6 +216,16 @@ export function renderApp(state: AppViewState) {
               },
             )}
           </div>
+          <div class="nav-group__items" style="padding: 0 8px 8px 8px;">
+            ${
+              state.googleClientId
+                ? html`<google-signin-button
+                  .clientId=${state.googleClientId}
+                  @success=${(e: CustomEvent) => state.handleUserIdentityBind(e.detail.credential)}
+                ></google-signin-button>`
+                : nothing
+            }
+          </div>
         </div>
       </aside>
       <main class="content ${isChat ? "content--chat" : ""}">

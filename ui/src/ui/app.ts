@@ -79,9 +79,16 @@ import {
 import { resolveInjectedAssistantIdentity } from "./assistant-identity.ts";
 import { loadAssistantIdentity as loadAssistantIdentityInternal } from "./controllers/assistant-identity.ts";
 import { type BillingState, loadBalance, verifyTransaction } from "./controllers/billing.ts";
+import {
+  type UserIdentityState,
+  initialUserIdentityState,
+  bindGoogle,
+  recoverAccount,
+} from "./controllers/user-identity.ts";
 import { walletService } from "./services/wallet.ts";
 import { loadSettings, type UiSettings } from "./storage.ts";
 import { type ChatAttachment, type ChatQueueItem, type CronFormState } from "./ui-types.ts";
+import "./components/google-signin.ts"; // Register web component
 
 declare global {
   interface Window {
@@ -197,6 +204,8 @@ export class OpenClawApp extends LitElement {
     selectedToken: "USDC",
     walletAddress: null,
   };
+  @state() userIdentity: UserIdentityState = { ...initialUserIdentityState };
+  @state() googleClientId: string | null = null;
 
   @state() channelsLoading = false;
   @state() channelsSnapshot: ChannelsStatusSnapshot | null = null;
@@ -396,6 +405,14 @@ export class OpenClawApp extends LitElement {
         connected: this.connected,
         client: this.client,
       };
+      this.userIdentity = {
+        ...this.userIdentity,
+        connected: this.connected,
+        client: this.client,
+      };
+    }
+    if (changed.has("hello") && this.hello?.googleClientId) {
+      this.googleClientId = this.hello.googleClientId;
     }
   }
 
@@ -582,6 +599,31 @@ export class OpenClawApp extends LitElement {
       ...patch,
     };
     this.requestUpdate("billingState");
+  }
+
+  async handleUserIdentityBind(credential: string) {
+    try {
+      await bindGoogle(this.userIdentity, credential);
+      this.requestUpdate("userIdentity");
+      // Could show success toast here
+    } catch (e) {
+      console.error("Bind failed", e);
+      this.requestUpdate("userIdentity");
+    }
+  }
+
+  async handleUserIdentityRecover(credential: string) {
+    try {
+      const res = await recoverAccount(this.userIdentity, credential);
+      this.requestUpdate("userIdentity");
+      if (res && (res as any).recovered) {
+        // Reload balance as account changed
+        await this.handleBillingLoad();
+      }
+    } catch (e) {
+      console.error("Recover failed", e);
+      this.requestUpdate("userIdentity");
+    }
   }
 
   // Sidebar handlers for tool output viewing
