@@ -10,10 +10,11 @@ import {
 import { verifyBaseTransaction } from "../../payment-hub/verification/base.js";
 import { verifyTronTransaction } from "../../payment-hub/verification/tron.js";
 import { ErrorCodes, errorShape } from "../protocol/index.js";
+import { resolveUserId, setGoogleSub } from "./resolve-user-id.js";
 
 export const paymentHandlers: GatewayRequestHandlers = {
   "payment.balance": async ({ respond, client }) => {
-    const userId = client?.connect?.client?.id;
+    const userId = resolveUserId(client);
     if (!userId) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "User not authenticated"));
       return;
@@ -35,7 +36,7 @@ export const paymentHandlers: GatewayRequestHandlers = {
       return;
     }
 
-    const userId = client?.connect?.client?.id;
+    const userId = resolveUserId(client);
     if (!userId) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "User not authenticated"));
       return;
@@ -75,7 +76,7 @@ export const paymentHandlers: GatewayRequestHandlers = {
    * Params: { walletAddress: string }
    */
   "payment.claimWalletBonus": async ({ params, respond, client }) => {
-    const userId = client?.connect?.client?.id;
+    const userId = resolveUserId(client);
     if (!userId) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "User not authenticated"));
       return;
@@ -101,7 +102,7 @@ export const paymentHandlers: GatewayRequestHandlers = {
    * Params: { email: string }
    */
   "payment.claimEmailBonus": async ({ params, respond, client }) => {
-    const userId = client?.connect?.client?.id;
+    const userId = resolveUserId(client);
     if (!userId) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "User not authenticated"));
       return;
@@ -133,7 +134,7 @@ export const paymentHandlers: GatewayRequestHandlers = {
    * Returns: { email, bonusGranted, balance }
    */
   "payment.bindGoogle": async ({ params, respond, client }) => {
-    const userId = client?.connect?.client?.id;
+    const userId = resolveUserId(client);
     if (!userId) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "User not authenticated"));
       return;
@@ -147,7 +148,12 @@ export const paymentHandlers: GatewayRequestHandlers = {
 
     try {
       const result = await bindGoogle(userId, credential);
-      const balance = await getBalance(userId);
+      // Store verified Google sub on client for subsequent resolveUserId calls
+      if (result.googleSub && client) {
+        setGoogleSub(client, result.googleSub);
+      }
+      const newUserId = resolveUserId(client) ?? userId;
+      const balance = await getBalance(newUserId);
       respond(true, { email: result.email, bonusGranted: result.bonusGranted, balance });
     } catch (e: any) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, e.message));
@@ -160,7 +166,7 @@ export const paymentHandlers: GatewayRequestHandlers = {
    * Returns: { bonusGranted, balance }
    */
   "payment.bindWallet": async ({ params, respond, client }) => {
-    const userId = client?.connect?.client?.id;
+    const userId = resolveUserId(client);
     if (!userId) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "User not authenticated"));
       return;
@@ -189,7 +195,7 @@ export const paymentHandlers: GatewayRequestHandlers = {
    * Returns: { recovered, creditsTransferred, balance }
    */
   "payment.recoverAccount": async ({ params, respond, client }) => {
-    const userId = client?.connect?.client?.id;
+    const userId = resolveUserId(client);
     if (!userId) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "User not authenticated"));
       return;
@@ -231,7 +237,7 @@ export const paymentHandlers: GatewayRequestHandlers = {
    * Returns: { userId, email, emailVerified, walletAddress, identityCount }
    */
   "payment.accountInfo": async ({ respond, client }) => {
-    const userId = client?.connect?.client?.id;
+    const userId = resolveUserId(client);
     if (!userId) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "User not authenticated"));
       return;

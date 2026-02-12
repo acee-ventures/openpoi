@@ -43,6 +43,7 @@ import {
 } from "../session-utils.js";
 import { formatForLog } from "../ws-log.js";
 import { injectTimestamp, timestampOptsFromConfig } from "./agent-timestamp.js";
+import { resolveUserId } from "./resolve-user-id.js";
 
 type TranscriptAppendResult = {
   ok: boolean;
@@ -417,8 +418,19 @@ export const chatHandlers: GatewayRequestHandlers = {
     // Payment Hub: Check Credits via WebSocket
     if (isInitialized()) {
       try {
-        // Resolve User ID (Priority: Authenticated User > Session Key)
-        const userId = client?.connect?.client?.id ?? `session:${sessionKey}`;
+        // Resolve User ID (Priority: Google identity > Device identity)
+        const userId = resolveUserId(client);
+        if (!userId) {
+          respond(
+            false,
+            undefined,
+            errorShape(
+              ErrorCodes.INVALID_REQUEST,
+              "Login required to use chat. Please sign in with Google.",
+            ),
+          );
+          return;
+        }
 
         // Check if user has sufficient credits
         const hasCredits = await checkCreditsGateSimple(userId);
@@ -576,7 +588,10 @@ export const chatHandlers: GatewayRequestHandlers = {
           onModelSelected,
           onUsageReported: isInitialized()
             ? (usageCtx) => {
-                const userId = client?.connect?.client?.id ?? `session:${sessionKey}`;
+                const userId = resolveUserId(client);
+                if (!userId) {
+                  return;
+                } // no identity → skip billing (gate already blocks unauthed)
                 const tokensIn = usageCtx.usage.input ?? 0;
                 const tokensOut = usageCtx.usage.output ?? 0;
                 if (tokensIn === 0 && tokensOut === 0) {

@@ -196,7 +196,55 @@ function isInsufficientCreditsError(error: string): boolean {
   );
 }
 
+function isLoginRequiredError(error: string): boolean {
+  const lower = error.toLowerCase();
+  return (
+    lower.includes("login required") ||
+    lower.includes("sign in") ||
+    lower.includes("user not authenticated")
+  );
+}
+
 function renderChatError(error: string) {
+  if (isLoginRequiredError(error)) {
+    return html`
+      <div class="callout danger insufficient-credits-callout">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            style="flex-shrink: 0"
+          >
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+            <polyline points="10 17 15 12 10 7" />
+            <line x1="15" y1="12" x2="3" y2="12" />
+          </svg>
+          <span>Sign in to start chatting — </span>
+          <a
+            href="/billing"
+            class="btn btn--sm"
+            style="
+              background: var(--accent);
+              color: var(--bg);
+              font-weight: 600;
+              padding: 4px 12px;
+              border-radius: 6px;
+              text-decoration: none;
+              font-size: 12px;
+            "
+            >Sign In</a
+          >
+        </div>
+      </div>
+    `;
+  }
   if (isInsufficientCreditsError(error)) {
     return html`
       <div class="callout danger insufficient-credits-callout">
