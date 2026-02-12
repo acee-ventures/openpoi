@@ -1,12 +1,13 @@
 services:
   - type: web
-    name: openclaw
+    name: openpoi-gateway
     runtime: docker
+    region: oregon
     plan: starter
     healthCheckPath: /health
     envVars:
       - key: PORT
-        value: "8080"
+        value: "10000"
       - key: SETUP_PASSWORD
         sync: false
       - key: OPENCLAW_STATE_DIR
@@ -15,6 +16,35 @@ services:
         value: /data/workspace
       - key: OPENCLAW_GATEWAY_TOKEN
         generateValue: true
+
+      # ─── Database ────────────────────────────────────────
+      - key: DATABASE_URL
+        sync: false
+      - key: PAYMENT_HUB_ENABLED
+        value: "true"
+
+      # ─── LLM Providers ───────────────────────────────────
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_AI_STUDIO_KEY
+        sync: false
+
+      # ─── Base Chain (Payment Verification) ────────────────
+      - key: BASE_RPC_URL
+        value: "https://mainnet.base.org"
+      - key: POI_ADDRESS_EVM
+        value: "0xD3a3a3348B28A6C816644A642E36B2Cc2FFe8Fa8"
+      - key: VITE_USDC_ADDRESS_EVM
+        value: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      - key: TREASURY_ADDRESS_EVM
+        value: "0x4ba854FB0797f8F0a8E37f004d6B5a914A8D68D8"
+
+      # ─── Gateway Auth ─────────────────────────────────────
+      - key: OPENCLAW_GATEWAY_PASSWORD
+        sync: false
+
     disk:
       name: openclaw-data
       mountPath: /data
