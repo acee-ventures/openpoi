@@ -4,8 +4,9 @@
  * These tables extend the existing ProofOfInfluence database.
  * Shares the same Neon PostgreSQL instance.
  *
- * Existing tables referenced (read-only from this service):
- *   - users(id, wallet_address, role, plan, ...)
+ * Existing tables referenced (read/write from this service):
+ *   - users(id, wallet_address, email, email_verified, role, plan)
+ *   - user_identities(id, user_id, provider, provider_user_id, email, email_verified, wallet_address)
  *   - user_balances(user_id PK, immortality_credits, poi_credits, updated_at)
  *   - poi_tiers(id, name, min_poi, fee_discount_rate, ...)
  *   - immortality_ledger(id, user_id, type, amount_credits, source, reference, metadata, created_at)
@@ -29,13 +30,48 @@ import {
 
 // ─── Existing tables (read/write references) ────────────────────────────────
 
-/** users — reference only (owned by ProofOfInfluence) */
+/** users — reference (owned by ProofOfInfluence, columns already exist in DB) */
 export const users = pgTable("users", {
   id: varchar("id").primaryKey(),
   walletAddress: varchar("wallet_address"),
+  email: varchar("email").unique(),
+  emailVerified: boolean("email_verified").default(false),
   role: varchar("role"),
   plan: varchar("plan"),
 });
+
+/**
+ * user_identities — reference (owned by ProofOfInfluence)
+ *
+ * Multi-provider identity binding. OpenPOI adds provider="device" for deviceId tracking.
+ * Existing providers: email | google | apple | wallet
+ */
+export const userIdentities = pgTable(
+  "user_identities",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id").notNull(),
+    provider: varchar("provider", { length: 32 }).notNull(), // email | google | apple | wallet | device
+    providerUserId: varchar("provider_user_id", { length: 255 }), // sub/email/address/deviceId
+    email: varchar("email", { length: 255 }),
+    emailVerified: boolean("email_verified").default(false).notNull(),
+    walletAddress: varchar("wallet_address", { length: 64 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("uniq_identity_provider_uid")
+      .on(table.provider, table.providerUserId)
+      .where(sql`provider_user_id IS NOT NULL`),
+    uniqueIndex("uniq_identity_wallet")
+      .on(table.walletAddress)
+      .where(sql`wallet_address IS NOT NULL`),
+    index("idx_identity_user").on(table.userId),
+    index("idx_identity_email").on(table.email),
+  ],
+);
 
 /** user_balances — read + write (poi_credits is the unified balance) */
 export const userBalances = pgTable("user_balances", {
@@ -182,9 +218,34 @@ export const modelPricing = pgTable("model_pricing", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ─── Identity — Progressive Identity (owned by OpenPOI) ────────────────────
+
+/**
+ * account_recovery_log — Audit trail for credit transfers during account recovery
+ */
+export const accountRecoveryLog = pgTable(
+  "account_recovery_log",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    oldUserId: varchar("old_user_id").notNull(),
+    newUserId: varchar("new_user_id").notNull(),
+    creditsTransferred: integer("credits_transferred").notNull(),
+    method: varchar("method").notNull(), // 'google' | 'wallet'
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_recovery_old_user").on(table.oldUserId),
+    index("idx_recovery_new_user").on(table.newUserId),
+  ],
+);
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
+export type UserIdentity = typeof userIdentities.$inferSelect;
+export type InsertUserIdentity = typeof userIdentities.$inferInsert;
 export type UserBalance = typeof userBalances.$inferSelect;
 export type PoiTier = typeof poiTiers.$inferSelect;
 
@@ -192,3 +253,4 @@ export type UnifiedLedgerEntry = typeof unifiedLedger.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type CryptoDeposit = typeof cryptoDeposits.$inferSelect;
 export type ModelPricingEntry = typeof modelPricing.$inferSelect;
+export type AccountRecoveryLogEntry = typeof accountRecoveryLog.$inferSelect;
