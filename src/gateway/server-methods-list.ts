@@ -92,6 +92,8 @@ const BASE_METHODS = [
   // Payment Hub methods
   "payment.balance",
   "payment.verify",
+  "payment.claimWalletBonus",
+  "payment.claimEmailBonus",
 ];
 
 export function listGatewayMethods(): string[] {

@@ -9,7 +9,11 @@ import { resolveAgentTimeoutMs } from "../../agents/timeout.js";
 import { dispatchInboundMessage } from "../../auto-reply/dispatch.js";
 import { createReplyDispatcher } from "../../auto-reply/reply/reply-dispatcher.js";
 import { createReplyPrefixOptions } from "../../channels/reply-prefix.js";
-import { checkCreditsGateSimple, isInitialized } from "../../payment-hub/credits-gate.js";
+import {
+  checkCreditsGateSimple,
+  isInitialized,
+  settleUsage,
+} from "../../payment-hub/credits-gate.js";
 import { resolveSendPolicy } from "../../sessions/send-policy.js";
 import { INTERNAL_MESSAGE_CHANNEL } from "../../utils/message-channel.js";
 import {
@@ -570,6 +574,28 @@ export const chatHandlers: GatewayRequestHandlers = {
             }
           },
           onModelSelected,
+          onUsageReported: isInitialized()
+            ? (usageCtx) => {
+                const userId = client?.connect?.client?.id ?? `session:${sessionKey}`;
+                const tokensIn = usageCtx.usage.input ?? 0;
+                const tokensOut = usageCtx.usage.output ?? 0;
+                if (tokensIn === 0 && tokensOut === 0) {
+                  return;
+                }
+                // Fire-and-forget: deduct credits based on actual usage.
+                // discountRate 0 = no tier discount in simplified WebSocket flow.
+                void settleUsage(
+                  userId,
+                  usageCtx.model,
+                  tokensIn,
+                  tokensOut,
+                  0, // discountRate
+                  `ws:${clientRunId}`,
+                ).catch((err) => {
+                  context.logGateway.warn(`Payment Hub settlement failed for ${userId}: ${err}`);
+                });
+              }
+            : undefined,
         },
       })
         .then(() => {

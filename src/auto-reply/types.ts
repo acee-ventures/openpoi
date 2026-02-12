@@ -13,6 +13,19 @@ export type ModelSelectedContext = {
   thinkLevel: string | undefined;
 };
 
+/** Context passed to onUsageReported callback with actual usage from the agent run. */
+export type UsageReportedContext = {
+  provider: string;
+  model: string;
+  usage: {
+    input?: number;
+    output?: number;
+    cacheRead?: number;
+    cacheWrite?: number;
+    total?: number;
+  };
+};
+
 export type GetReplyOptions = {
   /** Override run id for agent events (defaults to random UUID). */
   runId?: string;
@@ -34,6 +47,9 @@ export type GetReplyOptions = {
   /** Called when the actual model is selected (including after fallback).
    * Use this to get model/provider/thinkLevel for responsePrefix template interpolation. */
   onModelSelected?: (ctx: ModelSelectedContext) => void;
+  /** Called after the agent run completes with actual token usage and model info.
+   * Use this for post-response billing/settlement in contexts like WebSocket chat. */
+  onUsageReported?: (ctx: UsageReportedContext) => void;
   disableBlockStreaming?: boolean;
   /** Timeout for block reply delivery (ms). */
   blockReplyTimeoutMs?: number;

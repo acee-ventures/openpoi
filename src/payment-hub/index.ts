@@ -57,3 +57,4 @@ export {
   type SettlementResult,
 } from "./credits-gate.js";
 export { handleApiKeysRequest } from "./api-keys.js";
+export { grantWelcomeBonus, grantWalletBonus, grantEmailBonus } from "./credits-bonus.js";

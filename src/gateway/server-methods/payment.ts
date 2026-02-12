@@ -1,15 +1,9 @@
 import type { GatewayRequestHandlers } from "./types.js";
+import { grantWalletBonus, grantEmailBonus } from "../../payment-hub/credits-bonus.js";
 import { getBalance } from "../../payment-hub/credits-engine.js";
 import { verifyBaseTransaction } from "../../payment-hub/verification/base.js";
 import { verifyTronTransaction } from "../../payment-hub/verification/tron.js";
-import { ErrorCodes, errorShape } from "../protocol/index.js"; // Adjust import
-
-// Ensure protocol/index.js is correct import
-// Typically ErrorCodes is exported from "../protocol.js" or similar in this codebase
-// Based on server-methods.ts: import { ErrorCodes, errorShape } from "./protocol/index.js"; -> THIS SEEMS WRONG relative path in server-methods.ts vs here.
-// server-methods.ts is at src/gateway/server-methods.ts. imports from "./protocol/index.js".
-// So protocol is at src/gateway/protocol/index.js.
-// Since this file is src/gateway/server-methods/payment.ts, import should be "../protocol/index.js".
+import { ErrorCodes, errorShape } from "../protocol/index.js";
 
 export const paymentHandlers: GatewayRequestHandlers = {
   "payment.balance": async ({ respond, client }) => {
@@ -35,7 +29,6 @@ export const paymentHandlers: GatewayRequestHandlers = {
       return;
     }
 
-    // Resolve User ID (Authenticated User or Session)
     const userId = client?.connect?.client?.id;
     if (!userId) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "User not authenticated"));
@@ -66,6 +59,58 @@ export const paymentHandlers: GatewayRequestHandlers = {
           errorShape(ErrorCodes.INVALID_REQUEST, result.error || "Verification failed"),
         );
       }
+    } catch (e: any) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, e.message));
+    }
+  },
+
+  /**
+   * Claim wallet-connection bonus (5,000 credits). Idempotent.
+   * Params: { walletAddress: string }
+   */
+  "payment.claimWalletBonus": async ({ params, respond, client }) => {
+    const userId = client?.connect?.client?.id;
+    if (!userId) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "User not authenticated"));
+      return;
+    }
+
+    const { walletAddress } = params as { walletAddress?: string };
+    if (!walletAddress) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "Missing walletAddress"));
+      return;
+    }
+
+    try {
+      const granted = await grantWalletBonus(userId, walletAddress);
+      const balance = await getBalance(userId);
+      respond(true, { granted, balance });
+    } catch (e: any) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, e.message));
+    }
+  },
+
+  /**
+   * Claim email-registration bonus (10,000 credits). Idempotent.
+   * Params: { email: string }
+   */
+  "payment.claimEmailBonus": async ({ params, respond, client }) => {
+    const userId = client?.connect?.client?.id;
+    if (!userId) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "User not authenticated"));
+      return;
+    }
+
+    const { email } = params as { email?: string };
+    if (!email) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "Missing email"));
+      return;
+    }
+
+    try {
+      const granted = await grantEmailBonus(userId, email);
+      const balance = await getBalance(userId);
+      respond(true, { granted, balance });
     } catch (e: any) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, e.message));
     }
