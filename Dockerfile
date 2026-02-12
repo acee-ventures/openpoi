@@ -34,6 +34,9 @@ ENV NODE_ENV=production
 # Allow non-root user to write temp files during runtime/tests.
 RUN chown -R node:node /app
 
+# Pre-seed ACEE Agent workspace (identity, soul, user profile)
+RUN mkdir -p /data/workspace && chown -R node:node /data
+
 # Security hardening: Run as non-root user
 # The node:22-bookworm image includes a 'node' user (uid 1000)
 # This reduces the attack surface by preventing container escape via root privileges
@@ -46,6 +49,9 @@ EXPOSE $PORT
 # Bundle deploy config for headless environments (sets Gemini as default LLM)
 COPY deploy/openpoi.json /app/deploy/openpoi.json
 ENV OPENCLAW_CONFIG_PATH=/app/deploy/openpoi.json
+
+# Copy ACEE Agent workspace files into the image
+COPY --chown=node:node deploy/workspace/ /data/workspace/
 
 # Start gateway server.
 # --bind lan: listen on 0.0.0.0 so the container platform can route traffic.
