@@ -15,6 +15,7 @@ import {
   approveDevicePairing,
   ensureDeviceToken,
   getPairedDevice,
+  hasPairedDevices,
   requestDevicePairing,
   updatePairedDeviceMetadata,
   verifyDeviceToken,
@@ -678,6 +679,16 @@ export function attachGatewayWsMessageHandler(params: {
         const skipPairing = allowControlUiBypass && sharedAuthOk;
         if (device && devicePublicKey && !skipPairing) {
           const requirePairing = async (reason: string, _paired?: { deviceId: string }) => {
+            // Bootstrap auto-approve: on fresh deployments with no paired devices,
+            // auto-approve the first authenticated connection to break the chicken-and-egg
+            // deadlock where remote Control UI needs operator approval but no operator exists.
+            const isBootstrap = !isLocalClient && sharedAuthOk && !(await hasPairedDevices());
+            const silent = isLocalClient || isBootstrap;
+            if (isBootstrap) {
+              logGateway.info(
+                `bootstrap pairing: auto-approving first device (no existing paired devices, auth ok)`,
+              );
+            }
             const pairing = await requestDevicePairing({
               deviceId: device.id,
               publicKey: devicePublicKey,
@@ -688,7 +699,7 @@ export function attachGatewayWsMessageHandler(params: {
               role,
               scopes,
               remoteIp: reportedClientIp,
-              silent: isLocalClient,
+              silent,
             });
             const context = buildRequestContext();
             if (pairing.request.silent === true) {

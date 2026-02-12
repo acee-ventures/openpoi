@@ -235,6 +235,16 @@ function newToken() {
   return randomUUID().replaceAll("-", "");
 }
 
+/**
+ * Returns true if at least one device has been paired.
+ * Used for bootstrap detection: when no devices are paired yet,
+ * the first authenticated connection can be auto-approved.
+ */
+export async function hasPairedDevices(baseDir?: string): Promise<boolean> {
+  const state = await loadState(baseDir);
+  return Object.keys(state.pairedByDeviceId).length > 0;
+}
+
 export async function listDevicePairing(baseDir?: string): Promise<DevicePairingList> {
   const state = await loadState(baseDir);
   const pending = Object.values(state.pendingById).toSorted((a, b) => b.ts - a.ts);
