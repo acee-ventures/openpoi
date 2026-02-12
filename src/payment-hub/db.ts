@@ -22,7 +22,12 @@ export function getDb() {
     throw new Error("[payment-hub] Missing DATABASE_URL environment variable");
   }
 
-  const sql = neon(databaseUrl);
+  // Strip params unsupported by Neon HTTP driver (channel_binding is wire-protocol only)
+  const sanitized = new URL(databaseUrl);
+  sanitized.searchParams.delete("channel_binding");
+  const cleanUrl = sanitized.toString();
+
+  const sql = neon(cleanUrl);
   _db = drizzle(sql, { schema });
   return _db;
 }
