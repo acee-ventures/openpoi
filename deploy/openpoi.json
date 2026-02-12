@@ -23,6 +23,10 @@
     "auth": {
       "token": "${OPENCLAW_GATEWAY_TOKEN}",
       "password": "${OPENCLAW_GATEWAY_PASSWORD}"
+    },
+    "controlUi": {
+      "allowInsecureAuth": true,
+      "dangerouslyDisableDeviceAuth": true
     }
   }
 }
