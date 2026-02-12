@@ -137,7 +137,12 @@ export async function checkCreditsGateSimple(userId: string): Promise<boolean> {
   }
   const balance = await getBalance(userId);
   // New user with zero balance: auto-grant welcome bonus (1,000 credits).
+  // SECURITY: Only grant welcome bonus to Google-authenticated users.
+  // Device-only users (device:*) must sign in before receiving credits.
   if (balance.poiCredits === 0 && balance.immortalityCredits === 0) {
+    if (!userId.startsWith("google:")) {
+      return false; // Block: user must sign in with Google first
+    }
     const granted = await grantWelcomeBonus(userId);
     return granted; // true = just got 1000 credits; false = already claimed but spent all
   }

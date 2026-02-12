@@ -115,7 +115,7 @@ export async function registerDevice(userId: string): Promise<void> {
 export async function bindGoogle(
   userId: string,
   credential: string,
-): Promise<{ email: string; bonusGranted: boolean }> {
+): Promise<{ email: string; bonusGranted: boolean; googleSub: string }> {
   const db = getDb();
   const payload = await verifyGoogleIdToken(credential);
 
@@ -164,7 +164,7 @@ export async function bindGoogle(
 
   console.log(`[identity] Google bound: ${payload.email} → user ${userId.slice(0, 8)}...`);
 
-  return { email: payload.email, bonusGranted };
+  return { email: payload.email, bonusGranted, googleSub: payload.sub };
 }
 
 // ─── Wallet Binding ─────────────────────────────────────────────────────────

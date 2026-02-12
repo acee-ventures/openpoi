@@ -1,13 +1,72 @@
 import { html, nothing } from "lit";
 import { BillingState, loadBalance, verifyTransaction } from "../controllers/billing.js";
 import { WalletService } from "../services/wallet.js";
+import "../components/google-signin.js";
 
 export function renderBilling(
   state: BillingState,
   onConfigChange: (patch: Record<string, any>) => void,
+  opts?: {
+    isAuthenticated?: boolean;
+    googleClientId?: string | null;
+    onGoogleSignIn?: (credential: string) => void;
+  },
 ) {
   if (!state.client) {
     return html``;
+  }
+
+  // Auth gate: require Google Sign-In before showing billing
+  if (!opts?.isAuthenticated) {
+    return html`
+      <div class="billing-container">
+        <div class="billing-header">
+          <h2>Billing & Credits</h2>
+          <p class="summary-text">Sign in with Google to view your credits and start chatting.</p>
+        </div>
+        <div class="billing-content">
+          <div class="card" style="text-align: center; padding: 40px 20px;">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--fg-muted)"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              style="margin-bottom: 16px; opacity: 0.6"
+            >
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+              <polyline points="10 17 15 12 10 7" />
+              <line x1="15" y1="12" x2="3" y2="12" />
+            </svg>
+            <p style="margin-bottom: 20px; color: var(--fg-muted);">
+              Sign in to unlock <strong>1,000 free credits</strong> and start using the AI assistant.
+            </p>
+            ${
+              opts?.googleClientId
+                ? html`
+                <google-signin-button
+                  .clientId=${opts.googleClientId}
+                  theme="filled_blue"
+                  size="large"
+                  text="signin_with"
+                  shape="pill"
+                  @success=${(e: CustomEvent) => {
+                    opts?.onGoogleSignIn?.(e.detail.credential);
+                  }}
+                ></google-signin-button>
+              `
+                : html`
+                    <p class="muted">Google Sign-In is not configured.</p>
+                  `
+            }
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   // Load balance on first render if not loaded/loading

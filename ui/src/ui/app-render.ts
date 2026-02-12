@@ -349,7 +349,11 @@ export function renderApp(state: AppViewState) {
 
         ${
           state.tab === "billing"
-            ? renderBilling(state.billingState, (patch) => state.handleBillingConfigChange(patch))
+            ? renderBilling(state.billingState, (patch) => state.handleBillingConfigChange(patch), {
+                isAuthenticated: Boolean(state.userIdentity?.email),
+                googleClientId: state.googleClientId ?? null,
+                onGoogleSignIn: (credential: string) => state.handleUserIdentityBind(credential),
+              })
             : nothing
         }
 
