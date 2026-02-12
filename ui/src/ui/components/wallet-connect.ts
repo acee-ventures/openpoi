@@ -1,4 +1,4 @@
-import { html, nothing } from "lit-html";
+import { html, nothing } from "lit";
 import { walletService } from "../services/wallet.js";
 
 export function renderWalletConnect(
