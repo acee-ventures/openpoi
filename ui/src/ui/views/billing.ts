@@ -21,12 +21,13 @@ export function renderBilling(
     <div class="billing-container">
       <div class="billing-header">
         <h2>Billing & Credits</h2>
-        <p class="summary-text">Manage your credits and payment methods.</p>
+        <p class="summary-text">Manage your POI credits and add funds via crypto.</p>
       </div>
 
       <div class="billing-content">
         ${renderBalanceCard(state)}
         ${renderAddFunds(state, walletService, onConfigChange)}
+        ${renderPricingInfo()}
       </div>
     </div>
   `;
@@ -37,8 +38,13 @@ function renderBalanceCard(state: BillingState) {
     <div class="card balance-card">
       <div class="card-header">
         <h3>Current Balance</h3>
-        <button class="icon-button" @click=${() => loadBalance(state)} ?disabled=${state.balanceLoading}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+        <button
+          class="icon-button"
+          title="Refresh balance"
+          @click=${() => loadBalance(state)}
+          ?disabled=${state.balanceLoading}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
         </button>
       </div>
       <div class="balance-display">
@@ -48,17 +54,21 @@ function renderBalanceCard(state: BillingState) {
                 <div class="loading-spinner"></div>
               `
             : html`
-            <div class="balance-amount">
-                <span class="currency-symbol">Credits</span>
-                <span class="value">${state.balance ? state.balance.poiCredits.toLocaleString() : "0"}</span>
-            </div>
-            <div class="balance-sub">
-                $1 USDC = 100 Credits · 1 $POI = 1,000 Credits
-            </div>
-            `
+                <div class="balance-amount">
+                  <span class="currency-symbol">Credits</span>
+                  <span class="value">${state.balance ? state.balance.poiCredits.toLocaleString() : "0"}</span>
+                </div>
+                <div class="balance-sub">
+                  ${
+                    state.balance?.immortalityCredits
+                      ? html`<span>Legacy balance: ${state.balance.immortalityCredits.toLocaleString()} credits</span>`
+                      : nothing
+                  }
+                </div>
+              `
         }
       </div>
-       ${state.balanceError ? html`<div class="error-banner">${state.balanceError}</div>` : nothing}
+      ${state.balanceError ? html`<div class="error-banner">${state.balanceError}</div>` : nothing}
     </div>
   `;
 }
@@ -74,71 +84,75 @@ function renderAddFunds(
   const isPOI = state.selectedToken === "POI";
 
   return html`
-        <div class="card add-funds-card">
-            <div class="card-header">
-                <h3>Add Funds</h3>
-            </div>
-            
-            <div class="tabs">
-                <button 
-                    class="tab ${isBase ? "active" : ""}" 
-                    @click=${() => onConfigChange({ selectedChain: "base", selectedToken: "USDC" })}
-                >Base</button>
-                <button 
-                    class="tab ${isTron ? "active" : ""}" 
-                    @click=${() => onConfigChange({ selectedChain: "tron", selectedToken: "USDT" })}
-                >Tron</button>
-            </div>
+    <div class="card add-funds-card">
+      <div class="card-header">
+        <h3>Add Funds</h3>
+      </div>
 
-            ${
-              isBase
-                ? html`
-            <div class="token-selector" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                <button 
-                    class="btn btn--sm ${isUSDC ? "btn--primary" : "btn--secondary"}"
-                    @click=${() => onConfigChange({ selectedToken: "USDC" })}
+      <div class="tabs">
+        <button
+          class="tab ${isBase ? "active" : ""}"
+          @click=${() => onConfigChange({ selectedChain: "base", selectedToken: "USDC" })}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 6px;"><circle cx="12" cy="12" r="10"/><path d="m16 10-5.5 6L8 13.5"/></svg>
+          Base (ETH L2)
+        </button>
+        <button
+          class="tab ${isTron ? "active" : ""}"
+          @click=${() => onConfigChange({ selectedChain: "tron", selectedToken: "USDT" })}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 6px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Tron
+        </button>
+      </div>
+
+      ${
+        isBase
+          ? html`
+              <div class="token-selector">
+                <button
+                  class="btn btn--sm ${isUSDC ? "active" : ""}"
+                  @click=${() => onConfigChange({ selectedToken: "USDC" })}
                 >USDC</button>
-                <button 
-                    class="btn btn--sm ${isPOI ? "btn--primary" : "btn--secondary"}"
-                    @click=${() => onConfigChange({ selectedToken: "POI" })}
+                <button
+                  class="btn btn--sm ${isPOI ? "active" : ""}"
+                  @click=${() => onConfigChange({ selectedToken: "POI" })}
                 >$POI</button>
-            </div>
+              </div>
             `
-                : nothing
-            }
+          : nothing
+      }
 
-            <div class="payment-form">
-                <div class="form-group">
-                    <label>Amount (${isPOI ? "$POI" : "USD"})</label>
-                    <div class="input-wrapper">
-                        <span class="prefix">${isPOI ? "" : "$"}</span>
-                        <input type="number" id="payment-amount" min="5" step="1" value="10" placeholder="10.00">
-                    </div>
-                    ${
-                      !isPOI
-                        ? html`
-                            <p class="help-text">Min deposit: $5.00</p>
-                          `
-                        : nothing
-                    }
-                </div>
-
-                <div class="conversion-preview">
-                    ${
-                      isPOI
-                        ? html`
-                            1 $POI = <strong>1,000 Credits</strong>
-                          `
-                        : html`
-                            $1 USDC = <strong>100 Credits</strong>
-                          `
-                    }
-                </div>
-
-                ${renderPaymentActions(state, walletService, onConfigChange)}
-            </div>
+      <div class="payment-form">
+        <div class="form-group">
+          <label>Amount (${isPOI ? "$POI" : isBase ? "USDC" : "USDT"})</label>
+          <div class="input-wrapper">
+            <span class="prefix">${isPOI ? "POI" : "$"}</span>
+            <input
+              type="number"
+              id="payment-amount"
+              min="1"
+              step="1"
+              value="10"
+              placeholder="${isPOI ? "100" : "10"}"
+            >
+          </div>
         </div>
-    `;
+
+        <div class="conversion-preview">
+          ${
+            isPOI
+              ? html`
+                  1 $POI = <strong>1,000 Credits</strong>
+                `
+              : html`$1 ${isBase ? "USDC" : "USDT"} = <strong>100 Credits</strong>`
+          }
+        </div>
+
+        ${renderPaymentActions(state, walletService, onConfigChange)}
+      </div>
+    </div>
+  `;
 }
 
 function renderPaymentActions(
@@ -211,45 +225,118 @@ function renderPaymentActions(
 
   if (state.paymentProcessing) {
     return html`
-      <button class="btn btn--primary btn--loading" disabled>Processing...</button>
-      <p class="text-sm text-muted" style="margin-top: 0.5rem; text-align: center">
-        Please confirm in your wallet and wait for verification...
-      </p>
+      <div class="payment-actions">
+        <button class="btn primary btn--loading" disabled>
+          <div class="loading-spinner" style="width: 16px; height: 16px; border-width: 2px"></div>
+          Processing...
+        </button>
+        <p class="help-text" style="text-align: center">
+          Please confirm in your wallet and wait for on-chain verification...
+        </p>
+      </div>
     `;
   }
 
   if (state.paymentSuccess) {
     return html`
-            <div class="success-banner" style="margin-top: 1rem; padding: 1rem; background: rgba(0, 255, 0, 0.1); border-radius: 8px; text-align: center;">
-                <p style="color: #4caf50; font-weight: bold; margin-bottom: 0.5rem;">Payment Successful!</p>
-                <p>Added ${state.lastPaymentAmount} credits.</p>
-                <button class="btn btn--text" style="margin-top: 0.5rem; text-decoration: underline;" @click=${() => onConfigChange({ paymentSuccess: false })}>Dismiss</button>
-            </div>
-        `;
+      <div class="success-banner">
+        <p style="font-weight: 700; font-size: 15px; color: var(--ok);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 6px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Payment Successful!
+        </p>
+        <p style="color: var(--text); font-size: 14px;">
+          Added <strong>${state.lastPaymentAmount?.toLocaleString()}</strong> credits to your account.
+        </p>
+        <button class="btn btn--sm" style="margin-top: 8px;" @click=${() => onConfigChange({ paymentSuccess: false })}>
+          Continue
+        </button>
+      </div>
+    `;
   }
 
   return html`
-        <div class="payment-actions">
-            <button 
-                class="btn btn--primary" 
-                style="width: 100%; margin-top: 1rem;"
-                @click=${handlePayment}
-            >
-                ${chain === "base" ? `Pay with ${state.selectedToken}` : `Pay via Tron (USDT)`}
-            </button>
-            
-            ${
-              state.paymentError
-                ? html`
-                <div class="error-banner" style="margin-top: 1rem; padding: 1rem; background: rgba(255, 0, 0, 0.1); border-radius: 8px; color: #ff5252;">
-                    ${state.paymentError}
-                    <div style="margin-top: 0.5rem;">
-                        <button class="btn btn--sm btn--secondary" @click=${() => onConfigChange({ paymentError: null })}>Dismiss</button>
-                    </div>
-                </div>
-             `
-                : nothing
-            }
+    <div class="payment-actions">
+      <button
+        class="btn primary"
+        style="width: 100%;"
+        @click=${handlePayment}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+        ${chain === "base" ? `Pay with ${state.selectedToken}` : `Pay with USDT (Tron)`}
+      </button>
+
+      ${
+        state.paymentError
+          ? html`
+              <div class="error-banner">
+                <span>${state.paymentError}</span>
+                <button
+                  class="btn btn--sm"
+                  style="margin-top: 8px;"
+                  @click=${() => onConfigChange({ paymentError: null })}
+                >Dismiss</button>
+              </div>
+            `
+          : nothing
+      }
+
+      ${
+        state.walletAddress
+          ? html`
+              <p class="help-text" style="text-align: center;">
+                Wallet: <code style="font-family: var(--mono); font-size: 11px;">${state.walletAddress.slice(0, 6)}...${state.walletAddress.slice(-4)}</code>
+              </p>
+            `
+          : nothing
+      }
+    </div>
+  `;
+}
+
+function renderPricingInfo() {
+  return html`
+    <div class="card" style="animation-delay: 150ms">
+      <div class="card-header" style="margin-bottom: 12px">
+        <h3
+          style="
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            margin: 0;
+          "
+        >
+          Credit Rates
+        </h3>
+      </div>
+      <div class="status-list" style="font-size: 13px">
+        <div>
+          <span>GPT-5.3</span>
+          <span style="font-weight: 500; color: var(--text-strong)">5 credits / message</span>
         </div>
-    `;
+        <div>
+          <span>Claude Opus 4.6</span>
+          <span style="font-weight: 500; color: var(--text-strong)">8 credits / message</span>
+        </div>
+        <div>
+          <span>Gemini 3 Pro</span>
+          <span style="font-weight: 500; color: var(--text-strong)">4 credits / message</span>
+        </div>
+        <div>
+          <span>Grok xAI 4.1</span>
+          <span style="font-weight: 500; color: var(--text-strong)">6 credits / message</span>
+        </div>
+        <div>
+          <span>Image Generation</span>
+          <span style="font-weight: 500; color: var(--text-strong)">10 credits / image</span>
+        </div>
+      </div>
+      <p class="help-text" style="margin-top: 12px">
+        Credit rates may vary. Visit our
+        <a href="https://docs.aceexventures.com/pricing" target="_blank" rel="noopener">pricing page</a>
+        for details.
+      </p>
+    </div>
+  `;
 }

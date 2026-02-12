@@ -1,3 +1,4 @@
+/// <reference path="../types/wallet.d.ts" />
 // TronLink injects `tronWeb`
 
 const USDT_ADDRESS = import.meta.env.VITE_USDT_ADDRESS_TRON || "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";

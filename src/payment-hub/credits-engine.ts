@@ -11,7 +11,7 @@
 import { eq, sql } from "drizzle-orm";
 import { getDb } from "./db.js";
 import { calculateCreditCost, type ModelPrice } from "./pricing.js";
-import { userBalances, unifiedLedger, immortalityLedger, poiTiers } from "./schema.js";
+import { users, userBalances, unifiedLedger, immortalityLedger, poiTiers } from "./schema.js";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -130,6 +130,9 @@ export async function creditBalance(
   }
 
   const db = getDb();
+
+  // Auto-provision user if not exists (FK: user_balances.user_id → users.id)
+  await db.insert(users).values({ id: userId }).onConflictDoNothing();
 
   // Upsert balance (create if not exists)
   await db

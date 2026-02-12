@@ -13,6 +13,7 @@
  */
 
 import type { PoiAuthenticatedUser } from "./poi-auth.js";
+import { grantWelcomeBonus } from "./credits-bonus.js";
 import { getBalance, recordUsageAndDeduct, getUserDiscountRate } from "./credits-engine.js";
 import { calculateCreditCost, DEFAULT_MODEL_PRICING } from "./pricing.js";
 
@@ -135,6 +136,11 @@ export async function checkCreditsGateSimple(userId: string): Promise<boolean> {
     return false;
   }
   const balance = await getBalance(userId);
+  // New user with zero balance: auto-grant welcome bonus (1,000 credits).
+  if (balance.poiCredits === 0 && balance.immortalityCredits === 0) {
+    const granted = await grantWelcomeBonus(userId);
+    return granted; // true = just got 1000 credits; false = already claimed but spent all
+  }
   return balance.poiCredits >= 1; // Minimum to start a chat
 }
 

@@ -137,11 +137,24 @@ export async function sendChatMessage(
     state.chatStream = null;
     state.chatStreamStartedAt = null;
     state.lastError = error;
+
+    const lower = error.toLowerCase();
+    const isCreditsError =
+      lower.includes("402") ||
+      lower.includes("insufficient credit") ||
+      lower.includes("insufficient balance") ||
+      lower.includes("not enough credit") ||
+      lower.includes("payment required");
+
+    const displayText = isCreditsError
+      ? "Insufficient credits to process this request. Please add funds on the Billing page to continue."
+      : "Error: " + error;
+
     state.chatMessages = [
       ...state.chatMessages,
       {
         role: "assistant",
-        content: [{ type: "text", text: "Error: " + error }],
+        content: [{ type: "text", text: displayText }],
         timestamp: Date.now(),
       },
     ];

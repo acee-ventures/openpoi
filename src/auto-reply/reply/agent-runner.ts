@@ -375,6 +375,20 @@ export async function runReplyAgent(params: {
     const modelUsed = runResult.meta.agentMeta?.model ?? fallbackModel ?? defaultModel;
     const providerUsed =
       runResult.meta.agentMeta?.provider ?? fallbackProvider ?? followupRun.run.provider;
+
+    // Notify caller of actual usage (e.g. for WebSocket billing settlement).
+    if (hasNonzeroUsage(usage) && opts?.onUsageReported) {
+      try {
+        opts.onUsageReported({
+          provider: providerUsed,
+          model: modelUsed,
+          usage,
+        });
+      } catch {
+        // Best-effort: don't let billing callback failures break the reply flow.
+      }
+    }
+
     const cliSessionId = isCliProvider(providerUsed, cfg)
       ? runResult.meta.agentMeta?.sessionId?.trim()
       : undefined;
