@@ -131,19 +131,12 @@ function renderAddFunds(
             <input
               type="number"
               id="payment-amount"
-              min="${isPOI ? "1" : "5"}"
+              min="1"
               step="1"
               value="10"
-              placeholder="${isPOI ? "100" : "10.00"}"
+              placeholder="${isPOI ? "100" : "10"}"
             >
           </div>
-          ${
-            !isPOI
-              ? html`
-                  <p class="help-text">Min deposit: $5.00</p>
-                `
-              : nothing
-          }
         </div>
 
         <div class="conversion-preview">

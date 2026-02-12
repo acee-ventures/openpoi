@@ -17,13 +17,22 @@ export type UiSettings = {
 
 export function loadSettings(): UiSettings {
   const defaultUrl = (() => {
+    const envUrl = (import.meta as any).env?.VITE_OPENCLAW_GATEWAY_URL;
+    if (envUrl && typeof envUrl === "string" && envUrl.trim()) {
+      return envUrl.trim();
+    }
     const proto = location.protocol === "https:" ? "wss" : "ws";
     return `${proto}://${location.host}`;
   })();
 
+  const defaultToken = (() => {
+    const envToken = (import.meta as any).env?.VITE_OPENCLAW_GATEWAY_TOKEN;
+    return envToken && typeof envToken === "string" ? envToken.trim() : "";
+  })();
+
   const defaults: UiSettings = {
     gatewayUrl: defaultUrl,
-    token: "",
+    token: defaultToken,
     sessionKey: "main",
     lastActiveSessionKey: "main",
     theme: "system",
@@ -45,7 +54,10 @@ export function loadSettings(): UiSettings {
         typeof parsed.gatewayUrl === "string" && parsed.gatewayUrl.trim()
           ? parsed.gatewayUrl.trim()
           : defaults.gatewayUrl,
-      token: typeof parsed.token === "string" ? parsed.token : defaults.token,
+      token:
+        typeof parsed.token === "string" && parsed.token.trim()
+          ? parsed.token.trim()
+          : defaults.token,
       sessionKey:
         typeof parsed.sessionKey === "string" && parsed.sessionKey.trim()
           ? parsed.sessionKey.trim()
