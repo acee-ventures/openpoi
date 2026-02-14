@@ -53,7 +53,14 @@ ENV OPENCLAW_CONFIG_PATH=/app/deploy/openpoi.json
 # Copy ACEE Agent workspace files into the image
 COPY --chown=node:node deploy/workspace/ /data/workspace/
 
+# Copy seed script + knowledge into /app/ (outside persistent disk)
+# so seed-knowledge.sh can sync to /data/workspace/knowledge/ at startup
+COPY --chown=node:node deploy/seed-knowledge.sh /app/deploy/seed-knowledge.sh
+RUN chmod +x /app/deploy/seed-knowledge.sh
+COPY --chown=node:node deploy/workspace/knowledge/ /app/deploy/workspace/knowledge/
+
 # Start gateway server.
-# --bind lan: listen on 0.0.0.0 so the container platform can route traffic.
-# --allow-unconfigured: skip onboarding wizard in headless environments.
-CMD ["sh", "-c", "node openclaw.mjs gateway --allow-unconfigured --bind lan --port ${PORT}"]
+# 1. Seed knowledge from image → persistent disk (version-aware, fail-fast)
+# 2. --bind lan: listen on 0.0.0.0 so the container platform can route traffic.
+# 3. --allow-unconfigured: skip onboarding wizard in headless environments.
+CMD ["sh", "-c", "/app/deploy/seed-knowledge.sh && node openclaw.mjs gateway --allow-unconfigured --bind lan --port ${PORT}"]
