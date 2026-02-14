@@ -63,4 +63,4 @@ COPY --chown=node:node deploy/workspace/knowledge/ /app/deploy/workspace/knowled
 # 1. Seed knowledge from image → persistent disk (version-aware, fail-fast)
 # 2. --bind lan: listen on 0.0.0.0 so the container platform can route traffic.
 # 3. --allow-unconfigured: skip onboarding wizard in headless environments.
-CMD ["sh", "-c", "/app/deploy/seed-knowledge.sh && node openclaw.mjs gateway --allow-unconfigured --bind lan --port ${PORT}"]
+CMD ["bash", "-c", "/app/deploy/seed-knowledge.sh && node openclaw.mjs gateway --allow-unconfigured --bind lan --port ${PORT}"]

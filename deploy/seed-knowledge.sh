@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -euo pipefail
 
 SEED_DIR="${SEED_DIR:-/app/deploy/workspace/knowledge}"
